@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ISS 配車管理</title>
+<title>ISS 配車表</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -36,7 +36,6 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;
   background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;}
 
-/* ---- トップバー ---- */
 .topbar{
   background:var(--card);border-bottom:1px solid var(--border);
   padding:14px 16px 10px;position:sticky;top:0;z-index:50;
@@ -44,28 +43,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .topbar-row{display:flex;align-items:center;justify-content:space-between;}
 .topbar h1{font-size:18px;font-weight:600;letter-spacing:-.3px;}
 .topbar .sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.updated{font-size:11px;color:var(--muted);margin-top:4px;}
+.updated{font-size:11px;color:var(--muted);margin-top:3px;}
 
-/* GAS URL 入力エリア */
-.url-area{
-  background:var(--amber-bg);border-bottom:1px solid var(--border);
-  padding:10px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-}
-.url-area input{
-  flex:1;min-width:0;font-size:12px;padding:8px 10px;
-  border:1px solid var(--border);border-radius:8px;
-  background:var(--card);color:var(--text);
-  font-family:inherit;
-}
-.url-area input::placeholder{color:var(--muted);}
-.url-area button{
-  padding:8px 14px;font-size:13px;font-weight:600;
+.reload-btn{
+  padding:7px 14px;font-size:13px;font-weight:600;
   background:var(--blue);color:#fff;border:none;
   border-radius:8px;cursor:pointer;white-space:nowrap;
+  font-family:inherit;
 }
-.url-hint{font-size:11px;color:var(--amber);width:100%;}
+.reload-btn:active{opacity:.85;}
 
-/* ---- タブ ---- */
 .tabs{
   display:grid;grid-template-columns:1fr 1fr;
   background:var(--card);border-bottom:1px solid var(--border);
@@ -78,11 +65,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 }
 .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
 
-/* ---- コンテンツ ---- */
 .pane{display:none;padding:12px 12px 100px;}
 .pane.active{display:block;}
 
-/* ---- 日付バッジ ---- */
 .date-badge{
   font-size:13px;font-weight:600;color:var(--blue-text);
   background:var(--blue-bg);
@@ -90,7 +75,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   display:inline-block;margin-bottom:10px;
 }
 
-/* ---- バスカード ---- */
 .bus-card{
   background:var(--card);border:1px solid var(--border);
   border-radius:var(--radius);margin-bottom:8px;overflow:hidden;
@@ -109,7 +93,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bus-driver-main{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
 
-/* 複数回トリップ */
 .trips{padding:4px 0;}
 .trip-row{
   display:flex;align-items:center;gap:8px;
@@ -127,12 +110,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .trip-time{font-size:12px;color:var(--blue);font-weight:600;
   white-space:nowrap;margin-left:4px;}
 
-/* 空バス */
-.bus-empty{
-  padding:10px 14px;font-size:12px;color:var(--muted);font-style:italic;
-}
-
-/* ---- 乗務員ビュー ---- */
 .driver-section{margin-bottom:16px;}
 .driver-name-head{
   font-size:14px;font-weight:700;color:var(--text);
@@ -157,10 +134,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .day-tomorrow{background:var(--green-bg);color:var(--green);}
 .driver-detail{font-size:12px;color:var(--muted);margin-top:2px;}
 
-/* ---- ローディング・エラー ---- */
 .loading{
-  text-align:center;padding:48px 16px;color:var(--muted);
-  font-size:14px;
+  text-align:center;padding:48px 16px;color:var(--muted);font-size:14px;
 }
 .spinner{
   width:32px;height:32px;border:3px solid var(--border);
@@ -168,58 +143,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   animation:spin 0.8s linear infinite;margin:0 auto 12px;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
+
 .error-box{
   background:#FCEBEB;border:1px solid #F09595;border-radius:10px;
   padding:14px;margin:16px 0;font-size:13px;color:#791F1F;
+  line-height:1.6;
 }
-
-/* ---- 空セクション ---- */
 .empty{
   text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;
-}
-
-/* ---- サンプル使用バナー ---- */
-.sample-banner{
-  background:var(--amber-bg);border:1px solid var(--border);
-  border-radius:8px;padding:10px 12px;margin-bottom:12px;
-  font-size:12px;color:var(--amber);
 }
 </style>
 </head>
 <body>
 
-<!-- トップバー -->
 <div class="topbar">
   <div class="topbar-row">
     <div>
-      <h1>ISS 配車管理</h1>
+      <h1>ISS 配車表</h1>
       <div class="sub" id="today-label">読み込み中...</div>
     </div>
+    <button class="reload-btn" onclick="loadData()">更新</button>
   </div>
   <div class="updated" id="updated-label"></div>
 </div>
 
-<!-- GAS URL 入力 -->
-<div class="url-area">
-  <input type="text" id="gas-url" placeholder="Google Apps Script の URL をここに貼り付けてください" />
-  <button onclick="loadFromGAS()">読み込む</button>
-  <div class="url-hint">※ URLを設定するとスプレッドシートのデータが自動で表示されます</div>
-</div>
-
-<!-- タブ -->
 <div class="tabs">
-  <button class="tab active" onclick="showTab('buses', this)">バス別</button>
-  <button class="tab" onclick="showTab('drivers', this)">乗務員別</button>
+  <button class="tab active" onclick="showTab('buses',this)">バス別</button>
+  <button class="tab" onclick="showTab('drivers',this)">乗務員別</button>
 </div>
 
-<!-- バス別 -->
 <div class="pane active" id="pane-buses">
   <div id="buses-content">
     <div class="loading"><div class="spinner"></div>データを読み込んでいます...</div>
   </div>
 </div>
 
-<!-- 乗務員別 -->
 <div class="pane" id="pane-drivers">
   <div id="drivers-content">
     <div class="loading"><div class="spinner"></div>データを読み込んでいます...</div>
@@ -228,34 +186,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 
 <script>
 // =====================================================
-// アプリのデータ管理
+// GAS URL（固定）
 // =====================================================
+var GAS_URL = "https://script.google.com/macros/s/AKfycbyXjPf1repaPzsHHrXiTR1qku-sG-Kc7F71pzx48WlexiyTC8Z6jUDYEVGRSHpENGdv/exec";
+
 var appData = null;
 
-// --- GASからデータ取得 ---
-function loadFromGAS() {
-  var url = document.getElementById('gas-url').value.trim();
-  if (!url) {
-    alert('URLを入力してください');
-    return;
-  }
-  // URLをローカルに保存（次回起動時も使えるように）
-  try { localStorage.setItem('gas_url', url); } catch(e) {}
-
+// =====================================================
+// データ取得
+// =====================================================
+function loadData() {
   showLoading();
-
-  // GASはCORSのためJSONPを使用
   var script = document.createElement('script');
-  window._gasCallback = function(data) {
-    document.head.removeChild(script);
+  var cbName = '_cb' + Date.now();
+  window[cbName] = function(data) {
+    try { document.head.removeChild(script); } catch(e) {}
+    delete window[cbName];
     appData = data;
     renderAll();
   };
-  script.src = url + '?callback=_gasCallback';
   script.onerror = function() {
-    document.head.removeChild(script);
-    showError('GASのURLからデータを取得できませんでした。URLを確認してください。\n\nGAS側のdoGet関数がJSONPに対応しているか確認してください。');
+    try { document.head.removeChild(script); } catch(e) {}
+    delete window[cbName];
+    showError('スプレッドシートからデータを取得できませんでした。\n\n・インターネット接続を確認してください\n・しばらく待ってから「更新」ボタンを押してください');
   };
+  script.src = GAS_URL + '?callback=' + cbName + '&t=' + Date.now();
   document.head.appendChild(script);
 }
 
@@ -266,138 +221,75 @@ function showLoading() {
 }
 
 function showError(msg) {
-  var html = '<div class="error-box">⚠️ ' + msg + '</div>';
+  var html = '<div class="error-box">⚠️ ' + msg.replace(/\n/g,'<br>') + '</div>';
   document.getElementById('buses-content').innerHTML = html;
   document.getElementById('drivers-content').innerHTML = html;
 }
 
 // =====================================================
-// サンプルデータ（GAS未設定時に表示）
-// =====================================================
-var SAMPLE_DATA = {
-  lastUpdated: "サンプルデータ",
-  today: {
-    date: "2026/04/13",
-    buses: [
-      {busNo:"1", trips:[{school:"上津小学校 / 久留米東校", driver:"吉田", time:""}]},
-      {busNo:"2", trips:[{school:"上津小学校 / 久留米東校", driver:"園木", time:""}]},
-      {busNo:"3", trips:[{school:"千鳥小学校 / 古賀校", driver:"赤松", time:""}]},
-      {busNo:"4", trips:[{school:"千鳥小学校 / 古賀校", driver:"釜堀", time:""}]},
-      {busNo:"5", trips:[{school:"弥生が丘小学校 / 小郡校", driver:"嶽﨑", time:""}]},
-      {busNo:"16-58", trips:[{school:"弥生が丘小学校 / 小郡校", driver:"長野", time:""}]},
-      {busNo:"16-73", trips:[]},
-      {busNo:"16-79", trips:[]},
-      {busNo:"16-80", trips:[]},
-      {busNo:"16-81", trips:[]},
-      {busNo:"イトマン", trips:[]},
-      {busNo:"レンタカー", trips:[]}
-    ]
-  },
-  tomorrow: {
-    date: "2026/04/14",
-    buses: [
-      {busNo:"1", trips:[{school:"南小学校 / 久留米東校", driver:"吉田", time:""}]},
-      {busNo:"2", trips:[{school:"南小学校 / 久留米東校", driver:"園木", time:""}]},
-      {busNo:"3", trips:[{school:"舞の里小学校 / 古賀校", driver:"赤松", time:""}]},
-      {busNo:"4", trips:[{school:"舞の里小学校 / 古賀校", driver:"釜堀", time:""}]},
-      {busNo:"5", trips:[{school:"田代小学校 / 小郡校", driver:"嶽﨑", time:""}]},
-      {busNo:"16-58", trips:[{school:"田代小学校 / 小郡校", driver:"長野", time:""}]},
-      {busNo:"16-73", trips:[]},
-      {busNo:"16-79", trips:[]},
-      {busNo:"16-80", trips:[]},
-      {busNo:"16-81", trips:[]}
-    ]
-  }
-};
-
-// =====================================================
-// 画面描画
+// 描画
 // =====================================================
 function renderAll() {
-  var data = appData || SAMPLE_DATA;
-  var isSample = !appData;
-
-  // 日付ラベル更新
+  var data = appData;
   document.getElementById('today-label').textContent =
     '当日：' + data.today.date + '　翌日：' + data.tomorrow.date;
-  if (data.lastUpdated) {
-    document.getElementById('updated-label').textContent =
-      isSample ? '※ サンプル表示中 — 上のURLを設定するとリアルデータに切り替わります'
-               : '最終更新：' + data.lastUpdated;
-  }
-
-  renderBuses(data, isSample);
-  renderDrivers(data, isSample);
+  document.getElementById('updated-label').textContent =
+    '最終更新：' + data.lastUpdated;
+  renderBuses(data);
+  renderDrivers(data);
 }
 
-// ---- バス別ビュー ----
-function renderBuses(data, isSample) {
+// ---- バス別 ----
+function renderBuses(data) {
   var html = '';
-  if (isSample) {
-    html += '<div class="sample-banner">📋 サンプルデータを表示しています。上のURLを入力すると実際のスプレッドシートのデータが反映されます。</div>';
-  }
-
-  // 当日
   html += '<div class="date-badge">当日　' + data.today.date + '</div>';
-  data.today.buses.forEach(function(bus) {
-    html += buildBusCard(bus);
-  });
-
-  // 翌日
+  data.today.buses.forEach(function(bus) { html += buildBusCard(bus); });
   html += '<div class="date-badge" style="margin-top:16px;">翌日　' + data.tomorrow.date + '</div>';
-  data.tomorrow.buses.forEach(function(bus) {
-    html += buildBusCard(bus);
-  });
-
+  data.tomorrow.buses.forEach(function(bus) { html += buildBusCard(bus); });
   document.getElementById('buses-content').innerHTML = html;
 }
 
 function buildBusCard(bus) {
   var html = '<div class="bus-card">';
-
   if (bus.trips.length === 0) {
-    // 未割当バス
-    html += '<div class="bus-head"><span class="bus-no">バス ' + escHtml(bus.busNo) + '</span>';
-    html += '<span class="bus-school" style="color:var(--muted);">— 未割当 —</span></div>';
+    html += '<div class="bus-head">'
+      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
+      + '<span class="bus-school" style="color:var(--muted);">未割当</span>'
+      + '</div>';
   } else if (bus.trips.length === 1) {
-    // 1回のみ
     var t = bus.trips[0];
     html += '<div class="bus-head">'
-      + '<span class="bus-no">バス ' + escHtml(bus.busNo) + '</span>'
-      + '<span class="bus-school">' + escHtml(t.school) + '</span>'
-      + '<span class="bus-driver-main">' + escHtml(t.driver) + '</span>'
+      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
+      + '<span class="bus-school">' + esc(t.school) + '</span>'
+      + '<span class="bus-driver-main">' + esc(t.driver) + '</span>'
       + '</div>';
     if (t.time) {
-      html += '<div class="trips"><div class="trip-row" style="padding:6px 14px;">'
-        + '<span class="trip-time">' + escHtml(t.time) + '</span></div></div>';
+      html += '<div class="trips"><div class="trip-row">'
+        + '<span class="trip-time">' + esc(t.time) + '</span></div></div>';
     }
   } else {
-    // 複数回
     html += '<div class="bus-head">'
-      + '<span class="bus-no">バス ' + escHtml(bus.busNo) + '</span>'
+      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
       + '<span class="bus-school">' + bus.trips.length + '回運行</span>'
-      + '</div>';
-    html += '<div class="trips">';
+      + '</div><div class="trips">';
     bus.trips.forEach(function(t, i) {
       html += '<div class="trip-row">'
         + '<span class="trip-badge">' + (i+1) + '回</span>'
-        + '<span class="trip-school">' + escHtml(t.school) + '</span>'
-        + '<span class="trip-driver">' + escHtml(t.driver) + '</span>'
-        + (t.time ? '<span class="trip-time">' + escHtml(t.time) + '</span>' : '')
+        + '<span class="trip-school">' + esc(t.school) + '</span>'
+        + '<span class="trip-driver">' + esc(t.driver) + '</span>'
+        + (t.time ? '<span class="trip-time">' + esc(t.time) + '</span>' : '')
         + '</div>';
     });
     html += '</div>';
   }
-
   html += '</div>';
   return html;
 }
 
-// ---- 乗務員別ビュー ----
-function renderDrivers(data, isSample) {
-  // 全乗務員を抽出
+// ---- 乗務員別 ----
+function renderDrivers(data) {
   var driverMap = {};
-  function addTrip(buses, dayLabel, dayClass) {
+  function addTrips(buses, dayLabel, dayClass) {
     buses.forEach(function(bus) {
       bus.trips.forEach(function(t) {
         if (!t.driver) return;
@@ -409,45 +301,40 @@ function renderDrivers(data, isSample) {
       });
     });
   }
-  addTrip(data.today.buses,    '当日 ' + data.today.date,    'day-today');
-  addTrip(data.tomorrow.buses, '翌日 ' + data.tomorrow.date, 'day-tomorrow');
+  addTrips(data.today.buses,    '当日 ' + data.today.date,    'day-today');
+  addTrips(data.tomorrow.buses, '翌日 ' + data.tomorrow.date, 'day-tomorrow');
 
   var names = Object.keys(driverMap).sort();
   var html = '';
-  if (isSample) {
-    html += '<div class="sample-banner">📋 サンプルデータを表示しています。</div>';
-  }
-
   if (names.length === 0) {
-    html += '<div class="empty">乗務員データがありません</div>';
+    html = '<div class="empty">乗務員データがありません</div>';
   } else {
     names.forEach(function(name) {
       var trips = driverMap[name];
       var initials = name.length >= 2 ? name.slice(0,1) + name.slice(-1) : name;
-      html += '<div class="driver-section">';
-      html += '<div class="driver-name-head">'
-        + '<div class="avatar">' + escHtml(initials) + '</div>'
-        + escHtml(name) + ' (' + trips.length + '件)'
+      html += '<div class="driver-section">'
+        + '<div class="driver-name-head">'
+        + '<div class="avatar">' + esc(initials) + '</div>'
+        + esc(name) + '（' + trips.length + '件）'
         + '</div>';
       trips.forEach(function(tr) {
         html += '<div class="driver-trip-row">'
-          + '<span class="day-pill ' + tr.dayClass + '">' + escHtml(tr.dayLabel) + '</span>'
-          + '<div><div style="font-size:13px;font-weight:600;">バス ' + escHtml(tr.busNo) + '</div>'
-          + '<div class="driver-detail">' + escHtml(tr.school)
-          + (tr.time ? '　' + escHtml(tr.time) : '') + '</div></div>'
+          + '<span class="day-pill ' + tr.dayClass + '">' + esc(tr.dayLabel) + '</span>'
+          + '<div><div style="font-size:13px;font-weight:600;">バス ' + esc(tr.busNo) + '</div>'
+          + '<div class="driver-detail">' + esc(tr.school)
+          + (tr.time ? '　' + esc(tr.time) : '') + '</div></div>'
           + '</div>';
       });
       html += '</div>';
     });
   }
-
   document.getElementById('drivers-content').innerHTML = html;
 }
 
 // =====================================================
 // ユーティリティ
 // =====================================================
-function escHtml(str) {
+function esc(str) {
   return String(str || '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -461,20 +348,10 @@ function showTab(name, el) {
 }
 
 // =====================================================
-// 起動処理
+// 起動
 // =====================================================
 window.onload = function() {
-  // 保存済みURLがあれば自動読み込み
-  try {
-    var saved = localStorage.getItem('gas_url');
-    if (saved) {
-      document.getElementById('gas-url').value = saved;
-      loadFromGAS();
-      return;
-    }
-  } catch(e) {}
-  // なければサンプル表示
-  renderAll();
+  loadData();
 };
 </script>
 </body>
