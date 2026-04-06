@@ -19,6 +19,7 @@
   --blue:#185FA5;--blue-bg:#E6F1FB;--blue-text:#0C447C;
   --green:#3B6D11;--green-bg:#EAF3DE;
   --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+  --purple:#3C3489;--purple-bg:#EEEDFE;--purple-text:#3C3489;
   --radius:12px;--brand:#3C3489;
 }
 @media(prefers-color-scheme:dark){
@@ -28,6 +29,7 @@
     --blue-bg:#0c2a4a;--blue-text:#85B7EB;
     --green-bg:#1a2e0a;
     --gray-bg:#2a2a26;--gray-text:#9a9a90;
+    --purple-bg:#1a1840;--purple-text:#AFA9EC;
   }
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;
@@ -47,9 +49,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   border-radius:8px;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0;}
 .reload-btn:active{opacity:.85;}
 
-.tabs{display:grid;grid-template-columns:1fr 1fr;
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;
   background:var(--card);border-bottom:1px solid var(--border);}
-.tab{padding:11px 8px;font-size:13px;font-weight:500;text-align:center;
+.tab{padding:10px 4px;font-size:12px;font-weight:500;text-align:center;
   border:none;background:transparent;cursor:pointer;color:var(--muted);
   border-bottom:2px solid transparent;font-family:inherit;
   transition:color .15s,border-color .15s;}
@@ -75,7 +77,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .bus-school{font-size:13px;font-weight:600;color:var(--text);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bus-driver-main{font-size:12px;color:var(--muted);margin-left:auto;white-space:nowrap;}
-
 .trips{padding:4px 0;}
 .trip-row{display:flex;align-items:center;gap:8px;
   padding:8px 14px;border-bottom:1px solid var(--border);}
@@ -104,6 +105,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 .day-today{background:var(--blue-bg);color:var(--blue-text);}
 .day-tomorrow{background:var(--green-bg);color:var(--green);}
 .driver-detail{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* タイムスケジュール */
+.school-card{background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.school-name{font-size:14px;font-weight:700;color:var(--purple-text);
+  background:var(--purple-bg);padding:10px 14px;
+  border-bottom:1px solid var(--border);}
+.time-table{width:100%;border-collapse:collapse;font-size:12px;}
+.time-table th{background:var(--gray-bg);color:var(--gray-text);
+  font-weight:600;padding:6px 8px;text-align:center;
+  border-bottom:1px solid var(--border);font-size:11px;}
+.time-table td{padding:8px 8px;text-align:center;
+  border-bottom:1px solid var(--border);color:var(--text);}
+.time-table tr:last-child td{border-bottom:none;}
+.time-table .trip-num{font-weight:700;color:var(--blue-text);
+  background:var(--blue-bg);border-radius:10px;
+  padding:2px 8px;display:inline-block;font-size:11px;}
+.time-arrow{color:var(--muted);font-size:10px;}
+.time-val{font-weight:600;color:var(--text);}
+.lesson-range{color:var(--green);font-weight:600;}
 
 .loading{text-align:center;padding:48px 16px;color:var(--muted);font-size:14px;}
 .spinner{width:32px;height:32px;border:3px solid var(--border);
@@ -134,6 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
 <div class="tabs">
   <button class="tab active" onclick="showTab('buses',this)">バス別</button>
   <button class="tab" onclick="showTab('drivers',this)">乗務員別</button>
+  <button class="tab" onclick="showTab('schedule',this)">時刻表</button>
 </div>
 
 <div class="pane active" id="pane-buses">
@@ -148,17 +170,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP'
   </div>
 </div>
 
+<div class="pane" id="pane-schedule">
+  <div id="schedule-content">
+    <div class="loading"><div class="spinner"></div>データを読み込んでいます...</div>
+  </div>
+</div>
+
 <script>
 var GAS_URL = "https://script.google.com/macros/s/AKfycbyXjPf1repaPzsHHrXiTR1qku-sG-Kc7F71pzx48WlexiyTC8Z6jUDYEVGRSHpENGdv/exec";
 var appData = null;
 
-// =====================================================
-// データ取得
-// =====================================================
 function loadData() {
   showLoading();
-  var script = document.createElement('script');
-  var cbName = '_cb' + Date.now();
+  var script  = document.createElement('script');
+  var cbName  = '_cb' + Date.now();
   window[cbName] = function(data) {
     try { document.head.removeChild(script); } catch(e) {}
     delete window[cbName];
@@ -176,19 +201,18 @@ function loadData() {
 
 function showLoading() {
   var html = '<div class="loading"><div class="spinner"></div>スプレッドシートから読み込み中...</div>';
-  document.getElementById('buses-content').innerHTML = html;
-  document.getElementById('drivers-content').innerHTML = html;
+  document.getElementById('buses-content').innerHTML    = html;
+  document.getElementById('drivers-content').innerHTML  = html;
+  document.getElementById('schedule-content').innerHTML = html;
 }
 
 function showError(msg) {
   var html = '<div class="error-box">⚠️ ' + msg.replace(/\n/g,'<br>') + '</div>';
-  document.getElementById('buses-content').innerHTML = html;
-  document.getElementById('drivers-content').innerHTML = html;
+  document.getElementById('buses-content').innerHTML    = html;
+  document.getElementById('drivers-content').innerHTML  = html;
+  document.getElementById('schedule-content').innerHTML = html;
 }
 
-// =====================================================
-// 描画
-// =====================================================
 function renderAll() {
   var data = appData;
   document.getElementById('today-label').textContent =
@@ -196,60 +220,42 @@ function renderAll() {
   document.getElementById('updated-label').textContent = '最終更新：' + data.lastUpdated;
   renderBuses(data);
   renderDrivers(data);
+  renderSchedule(data);
 }
 
-// ---- バス別 ----
+// =====================================================
+// バス別
+// =====================================================
 function renderBuses(data) {
   var html = '';
-
   html += '<div class="section-head"><span class="section-label">当日（' + esc(data.today.date) + '）</span></div>';
-  if (data.today.buses.length === 0) {
-    html += '<div class="empty">データがありません</div>';
-  } else {
-    data.today.buses.forEach(function(bus) { html += buildBusCard(bus); });
-  }
-
+  data.today.buses.forEach(function(bus) { html += buildBusCard(bus); });
   html += '<div class="section-head"><span class="section-label tomorrow">翌日（' + esc(data.tomorrow.date) + '）</span></div>';
-  if (data.tomorrow.buses.length === 0) {
-    html += '<div class="empty">データがありません</div>';
-  } else {
-    data.tomorrow.buses.forEach(function(bus) { html += buildBusCard(bus); });
-  }
-
+  data.tomorrow.buses.forEach(function(bus) { html += buildBusCard(bus); });
   document.getElementById('buses-content').innerHTML = html;
 }
 
 function buildBusCard(bus) {
   var html = '<div class="bus-card">';
-
-  // 空の先頭回転をスキップして有効なtripsのみ取得（例：2回転目のみでも1回運行）
-  var validTrips = bus.trips; // GAS側で空回転除去済み
-
-  if (validTrips.length === 0) {
-    html += '<div class="bus-head">'
-      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
-      + '<span class="bus-school" style="color:var(--muted);">未割当</span>'
-      + '</div>';
-  } else if (validTrips.length === 1) {
-    var t = validTrips[0];
-    html += '<div class="bus-head">'
-      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
+  if (bus.trips.length === 0) {
+    html += '<div class="bus-head"><span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
+      + '<span class="bus-school" style="color:var(--muted);">未割当</span></div>';
+  } else if (bus.trips.length === 1) {
+    var t = bus.trips[0];
+    html += '<div class="bus-head"><span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
       + '<span class="bus-school">' + esc(t.school) + '</span>'
-      + '<span class="bus-driver-main">' + esc(t.driver) + '</span>'
-      + '</div>';
+      + '<span class="bus-driver-main">' + esc(t.driver) + '</span></div>';
     if (t.time) {
       html += '<div class="trips"><div class="trip-row">'
-        + '<span class="trip-time">' + esc(t.time) + '</span>'
-        + '</div></div>';
+        + '<span class="trip-time">' + esc(t.time) + '</span></div></div>';
     }
   } else {
-    html += '<div class="bus-head">'
-      + '<span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
-      + '<span class="bus-school">' + validTrips.length + '回運行</span>'
-      + '</div><div class="trips">';
-    validTrips.forEach(function(t, i) {
+    html += '<div class="bus-head"><span class="bus-no">バス ' + esc(bus.busNo) + '</span>'
+      + '<span class="bus-school">' + bus.trips.length + '回運行</span></div>'
+      + '<div class="trips">';
+    bus.trips.forEach(function(t, i) {
       html += '<div class="trip-row">'
-        + '<span class="trip-badge">' + (i + 1) + '回</span>'
+        + '<span class="trip-badge">' + (i+1) + '回</span>'
         + '<span class="trip-school">' + esc(t.school) + '</span>'
         + '<span class="trip-driver">' + esc(t.driver) + '</span>'
         + (t.time ? '<span class="trip-time">' + esc(t.time) + '</span>' : '')
@@ -261,60 +267,87 @@ function buildBusCard(bus) {
   return html;
 }
 
-// ---- 乗務員別 ----
+// =====================================================
+// 乗務員別
+// =====================================================
 function renderDrivers(data) {
   var driverMap = {};
-
-  function addTrips(buses, dateStr, dayLabel, dayClass) {
+  function addTrips(buses, dayLabel, dayClass) {
     buses.forEach(function(bus) {
       bus.trips.forEach(function(t) {
-        // 乗務員名が空の場合は必ずスキップ
         var name = (t.driver || '').trim();
         if (!name || name === 'バス') return;
         if (!driverMap[name]) driverMap[name] = [];
         driverMap[name].push({
-          busNo: bus.busNo,
-          school: t.school,
-          time: t.time,
-          dayLabel: dayLabel,
-          dayClass: dayClass
+          busNo: bus.busNo, school: t.school,
+          time: t.time, dayLabel: dayLabel, dayClass: dayClass
         });
       });
     });
   }
-
-  addTrips(data.today.buses,    data.today.date,
-    '当日（' + data.today.date + '）', 'day-today');
-  addTrips(data.tomorrow.buses, data.tomorrow.date,
-    '翌日（' + data.tomorrow.date + '）', 'day-tomorrow');
+  addTrips(data.today.buses,    '当日（' + data.today.date + '）',    'day-today');
+  addTrips(data.tomorrow.buses, '翌日（' + data.tomorrow.date + '）', 'day-tomorrow');
 
   var names = Object.keys(driverMap).sort();
-  var html = '';
-
+  var html  = '';
   if (names.length === 0) {
     html = '<div class="empty">乗務員データがありません</div>';
   } else {
     names.forEach(function(name) {
-      var trips = driverMap[name];
-      var initials = name.length >= 2 ? name.slice(0, 1) + name.slice(-1) : name;
+      var trips    = driverMap[name];
+      var initials = name.length >= 2 ? name.slice(0,1) + name.slice(-1) : name;
       html += '<div class="driver-section">'
         + '<div class="driver-name-head">'
         + '<div class="avatar">' + esc(initials) + '</div>'
-        + esc(name) + '（' + trips.length + '件）'
-        + '</div>';
+        + esc(name) + '（' + trips.length + '件）</div>';
       trips.forEach(function(tr) {
         html += '<div class="driver-trip-row">'
           + '<span class="day-pill ' + tr.dayClass + '">' + esc(tr.dayLabel) + '</span>'
-          + '<div>'
-          + '<div style="font-size:13px;font-weight:600;">バス ' + esc(tr.busNo) + '</div>'
+          + '<div><div style="font-size:13px;font-weight:600;">バス ' + esc(tr.busNo) + '</div>'
           + '<div class="driver-detail">' + esc(tr.school)
-          + (tr.time ? '　' + esc(tr.time) : '') + '</div>'
-          + '</div></div>';
+          + (tr.time ? '　' + esc(tr.time) : '') + '</div></div></div>';
       });
       html += '</div>';
     });
   }
   document.getElementById('drivers-content').innerHTML = html;
+}
+
+// =====================================================
+// タイムスケジュール
+// =====================================================
+function renderSchedule(data) {
+  var schools = data.schedule;
+  if (!schools || schools.length === 0) {
+    document.getElementById('schedule-content').innerHTML =
+      '<div class="empty">時刻データがありません</div>';
+    return;
+  }
+
+  var html = '';
+  schools.forEach(function(school) {
+    html += '<div class="school-card">'
+      + '<div class="school-name">' + esc(school.name) + '</div>'
+      + '<table class="time-table">'
+      + '<thead><tr>'
+      + '<th>回転</th><th>学校出発</th><th>SS到着</th>'
+      + '<th>授業</th><th>SS出発</th><th>学校到着</th>'
+      + '</tr></thead><tbody>';
+
+    school.trips.forEach(function(t) {
+      html += '<tr>'
+        + '<td><span class="trip-num">' + t.trip + '回</span></td>'
+        + '<td><span class="time-val">' + esc(t.depart) + '</span></td>'
+        + '<td><span class="time-val">' + esc(t.ssArrive) + '</span></td>'
+        + '<td><span class="lesson-range">' + esc(t.lessonStart) + '〜' + esc(t.lessonEnd) + '</span></td>'
+        + '<td><span class="time-val">' + esc(t.ssDepart) + '</span></td>'
+        + '<td><span class="time-val">' + esc(t.schoolArrive) + '</span></td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+  });
+
+  document.getElementById('schedule-content').innerHTML = html;
 }
 
 // =====================================================
