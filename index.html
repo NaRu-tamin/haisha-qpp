@@ -403,13 +403,23 @@ function switchTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
 }
 
+// ─── 日付を M/d 形式に整形 ───
+function fmtDate(d) {
+  if (!d) return '';
+  const p = new Date(d);
+  if (!isNaN(p.getTime())) {
+    return (p.getMonth() + 1) + '/' + p.getDate();
+  }
+  return String(d);
+}
+
 // ─── 全描画 ───
 function renderAll() {
   if (!appData) return;
 
   // ヘッダー更新
-  const today = appData.today?.date || '';
-  const tmr   = appData.tomorrow?.date || '';
+  const today = fmtDate(appData.today?.date);
+  const tmr   = fmtDate(appData.tomorrow?.date);
   document.getElementById('dateChip').textContent = '当日：' + today + '　翌日：' + tmr;
   document.getElementById('lastUpdated').textContent = '最終更新：' + (appData.lastUpdated || '');
 
@@ -429,7 +439,7 @@ function renderBus() {
     const dayData = appData[day];
     if (!dayData || !dayData.buses || dayData.buses.length === 0) return;
 
-    const label = day === 'today' ? '当日（' + dayData.date + '）' : '翌日（' + dayData.date + '）';
+    const label = day === 'today' ? '当日（' + fmtDate(dayData.date) + '）' : '翌日（' + fmtDate(dayData.date) + '）';
     html += '<div class="day-section">';
     html += '<div class="day-header">' + label + '</div>';
 
@@ -494,8 +504,8 @@ function renderDriver() {
     });
   };
 
-  addTrips(appData.today,    '当日 ' + appData.today?.date,    false);
-  addTrips(appData.tomorrow, '翌日 ' + appData.tomorrow?.date, true);
+  addTrips(appData.today,    '当日 ' + fmtDate(appData.today?.date),    false);
+  addTrips(appData.tomorrow, '翌日 ' + fmtDate(appData.tomorrow?.date), true);
 
   let html = '';
   Object.entries(driverMap).sort(([a],[b]) => a.localeCompare(b)).forEach(([driver, trips]) => {
@@ -577,8 +587,8 @@ function renderNotify() {
     });
   };
 
-  addTrips(appData.today,    '当日 ' + appData.today?.date);
-  addTrips(appData.tomorrow, '翌日 ' + appData.tomorrow?.date);
+  addTrips(appData.today,    '当日 ' + fmtDate(appData.today?.date));
+  addTrips(appData.tomorrow, '翌日 ' + fmtDate(appData.tomorrow?.date));
 
   let html = '<div class="notify-section">';
   html += '<div class="notify-header">📢 乗務員への連絡用テキスト（コピーしてLINE/メールで送信）</div>';
