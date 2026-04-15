@@ -469,53 +469,70 @@ function renderAll() {
 }
 
 // ─────────────────────────────────────
-// ① バス別タブ（当日・翌日ラベルなし、バス一覧をフラット表示）
+// ① 車両別タブ（車両カード内に当日/翌日を日付付きで区分）
 // ─────────────────────────────────────
 function renderBus() {
-  // 当日・翌日のバスをバス番号でマージ
+  // 車両ごとに {today: [], tomorrow: []} でまとめる
   const busMap = {};
   ['today', 'tomorrow'].forEach(day => {
     const dayData = appData[day];
     if (!dayData?.buses) return;
     dayData.buses.forEach(busEntry => {
-      if (!busMap[busEntry.bus]) busMap[busEntry.bus] = [];
-      busEntry.trips.forEach(trip => {
-        busMap[busEntry.bus].push(trip);
-      });
+      if (!busMap[busEntry.bus]) busMap[busEntry.bus] = { today: [], tomorrow: [] };
+      busEntry.trips.forEach(trip => busMap[busEntry.bus][day].push(trip));
     });
   });
 
   let html = '';
-  Object.keys(busMap).sort((a,b) => Number(a)-Number(b)).forEach(busNum => {
-    const trips = busMap[busNum];
+  Object.keys(busMap).sort((a,b) => {
+    const na = isNaN(Number(a)), nb = isNaN(Number(b));
+    if (!na && !nb) return Number(a) - Number(b);
+    if (na && !nb) return 1;
+    if (!na && nb) return -1;
+    return a.localeCompare(b);
+  }).forEach(busNum => {
+    const { today: todayTrips, tomorrow: tmrTrips } = busMap[busNum];
+    const totalTrips = todayTrips.length + tmrTrips.length;
     const vCode = VEHICLE_CODES[busNum] || '';
 
     html += '<div class="bus-card">';
     html += '<div class="bus-title">';
     html += '<span class="bus-badge">' + busNum + '</span>';
     if (vCode) html += '<span class="vehicle-code">' + vCode + '</span>';
-    if (trips.length === 0) {
+    if (totalTrips === 0) {
       html += '</div><div class="unassigned">未割当</div></div>';
       return;
     }
-    html += '<span class="trip-count">' + trips.length + '回運行</span>';
     html += '</div>';
 
-    html += '<table class="trip-table">';
-    html += '<tr><th width="32">便</th><th>学校 / 校舎</th><th>乗務員</th><th>学校出発</th><th>SS到着</th></tr>';
+    // 当日・翌日それぞれのブロックを表示
+    [
+      { trips: todayTrips,  dayData: appData.today,    label: '当日' },
+      { trips: tmrTrips,    dayData: appData.tomorrow, label: '翌日' },
+    ].forEach(({ trips, dayData, label }) => {
+      if (!trips || trips.length === 0) return;
+      const dateStr = fmtDate(dayData?.date);
 
-    trips.forEach(trip => {
-      const timeInfo = getScheduleTime(trip.school, trip.tripNum);
-      html += '<tr>';
-      html += '<td><span class="trip-num">' + trip.tripNum + '</span></td>';
-      html += '<td class="school-text">' + (trip.school || '—') + '</td>';
-      html += '<td class="driver-name">' + (trip.driver || '—') + '</td>';
-      html += '<td>' + (timeInfo.schoolDepart ? '<span class="time-chip">出 ' + timeInfo.schoolDepart + '</span>' : '<span class="time-na">—</span>') + '</td>';
-      html += '<td>' + (timeInfo.ssArrive     ? '<span class="time-chip">着 ' + timeInfo.ssArrive + '</span>'     : '<span class="time-na">—</span>') + '</td>';
-      html += '</tr>';
+      html += '<div style="background:#f0f4fa; padding:5px 12px; font-size:11px; font-weight:700; color:#1a3a5c; border-top:1px solid #dde4f0;">';
+      html += label + '　' + dateStr;
+      html += '</div>';
+
+      html += '<table class="trip-table">';
+      html += '<tr><th width="32">便</th><th>学校 / 校舎</th><th>乗務員</th><th>学校出発</th><th>SS到着</th></tr>';
+      trips.forEach(trip => {
+        const timeInfo = getScheduleTime(trip.school, trip.tripNum);
+        html += '<tr>';
+        html += '<td><span class="trip-num">' + trip.tripNum + '</span></td>';
+        html += '<td class="school-text">' + (trip.school || '—') + '</td>';
+        html += '<td class="driver-name">' + (trip.driver || '—') + '</td>';
+        html += '<td>' + (timeInfo.schoolDepart ? '<span class="time-chip">出 ' + timeInfo.schoolDepart + '</span>' : '<span class="time-na">—</span>') + '</td>';
+        html += '<td>' + (timeInfo.ssArrive     ? '<span class="time-chip">着 ' + timeInfo.ssArrive + '</span>'     : '<span class="time-na">—</span>') + '</td>';
+        html += '</tr>';
+      });
+      html += '</table>';
     });
 
-    html += '</table></div>';
+    html += '</div>';
   });
 
   document.getElementById('tab-bus').innerHTML = html || '<div class="loading">データなし</div>';
@@ -558,6 +575,7 @@ function renderDriver() {
     html += '<span class="driver-count">' + trips.length + '件</span></div>';
     trips.forEach(t => {
       html += '<div class="driver-trip-row">';
+      html += '<span class="day-tag' + (t.isTomorrow ? ' tomorrow' : '') + '">' + fmtDate(t.isTomorrow ? appData.tomorrow?.date : appData.today?.date) + '</span>';
       html += '<span class="trip-num">' + t.tripNum + '</span>';
       html += '<span class="bus-badge" style="font-size:11px;">' + t.bus + '</span>';
       html += '<span class="school-text">' + (t.school || '—') + '</span>';
