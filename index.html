@@ -365,7 +365,7 @@
 
 <!-- タブ -->
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('bus')">🚌 車両別</button>
+  <button class="tab-btn active" onclick="switchTab('bus')">🏫 校舎別</button>
   <button class="tab-btn"        onclick="switchTab('driver')">👤 乗務員別</button>
   <button class="tab-btn"        onclick="switchTab('timetable')">🕐 時刻表</button>
   <button class="tab-btn"        onclick="switchTab('notify')">📋 運行詳細</button>
@@ -469,46 +469,44 @@ function renderAll() {
 }
 
 // ─────────────────────────────────────
-// ① 車両別タブ（車両カード内に当日/翌日を日付付きで区分）
+// ① 校舎別タブ（ISS校舎ごとに学校・乗務員・時刻を表示）
 // ─────────────────────────────────────
 function renderBus() {
-  // 車両ごとに {today: [], tomorrow: []} でまとめる
-  const busMap = {};
+  // 校舎ごとに {today: [], tomorrow: []} でまとめる
+  const branchMap = {};
+
   ['today', 'tomorrow'].forEach(day => {
     const dayData = appData[day];
     if (!dayData?.buses) return;
     dayData.buses.forEach(busEntry => {
-      if (!busMap[busEntry.bus]) busMap[busEntry.bus] = { today: [], tomorrow: [] };
-      busEntry.trips.forEach(trip => busMap[busEntry.bus][day].push(trip));
+      busEntry.trips.forEach(trip => {
+        const { schoolName, branchName } = parseSchoolBranch(trip.school);
+        const key = branchName || '（未設定）';
+        if (!branchMap[key]) branchMap[key] = { today: [], tomorrow: [] };
+        branchMap[key][day].push({
+          schoolName: schoolName,
+          schoolFull: trip.school,   // 時刻検索用（"学校名 / 校舎名"）
+          driver: trip.driver,
+          tripNum: trip.tripNum
+        });
+      });
     });
   });
 
   let html = '';
-  Object.keys(busMap).sort((a,b) => {
-    const na = isNaN(Number(a)), nb = isNaN(Number(b));
-    if (!na && !nb) return Number(a) - Number(b);
-    if (na && !nb) return 1;
-    if (!na && nb) return -1;
-    return a.localeCompare(b);
-  }).forEach(busNum => {
-    const { today: todayTrips, tomorrow: tmrTrips } = busMap[busNum];
+  Object.keys(branchMap).sort((a, b) => a.localeCompare(b, 'ja')).forEach(branchName => {
+    const { today: todayTrips, tomorrow: tmrTrips } = branchMap[branchName];
     const totalTrips = todayTrips.length + tmrTrips.length;
-    const vCode = VEHICLE_CODES[busNum] || '';
+    if (totalTrips === 0) return;
 
     html += '<div class="bus-card">';
     html += '<div class="bus-title">';
-    html += '<span class="bus-badge">' + busNum + '</span>';
-    if (vCode) html += '<span class="vehicle-code">' + vCode + '</span>';
-    if (totalTrips === 0) {
-      html += '</div><div class="unassigned">未割当</div></div>';
-      return;
-    }
+    html += '<span class="bus-badge" style="font-size:13px; padding:4px 12px;">🏫 ' + branchName + '</span>';
     html += '</div>';
 
-    // 当日・翌日それぞれのブロックを表示
     [
-      { trips: todayTrips,  dayData: appData.today,    label: '当日' },
-      { trips: tmrTrips,    dayData: appData.tomorrow, label: '翌日' },
+      { trips: todayTrips, dayData: appData.today,    label: '当日' },
+      { trips: tmrTrips,   dayData: appData.tomorrow, label: '翌日' },
     ].forEach(({ trips, dayData, label }) => {
       if (!trips || trips.length === 0) return;
       const dateStr = fmtDate(dayData?.date);
@@ -518,15 +516,14 @@ function renderBus() {
       html += '</div>';
 
       html += '<table class="trip-table">';
-      html += '<tr><th width="32">便</th><th>学校 / 校舎</th><th>乗務員</th><th>学校出発</th><th>SS到着</th></tr>';
+      html += '<tr><th>学校名</th><th>乗務員</th><th>学校出発</th><th>学校到着</th></tr>';
       trips.forEach(trip => {
-        const timeInfo = getScheduleTime(trip.school, trip.tripNum);
+        const timeInfo = getScheduleTime(trip.schoolFull, trip.tripNum);
         html += '<tr>';
-        html += '<td><span class="trip-num">' + trip.tripNum + '</span></td>';
-        html += '<td class="school-text">' + (trip.school || '—') + '</td>';
+        html += '<td class="school-text">' + (trip.schoolName || '—') + '</td>';
         html += '<td class="driver-name">' + (trip.driver || '—') + '</td>';
         html += '<td>' + (timeInfo.schoolDepart ? '<span class="time-chip">出 ' + timeInfo.schoolDepart + '</span>' : '<span class="time-na">—</span>') + '</td>';
-        html += '<td>' + (timeInfo.ssArrive     ? '<span class="time-chip">着 ' + timeInfo.ssArrive + '</span>'     : '<span class="time-na">—</span>') + '</td>';
+        html += '<td>' + (timeInfo.schoolArrive ? '<span class="time-chip">着 ' + timeInfo.schoolArrive + '</span>' : '<span class="time-na">—</span>') + '</td>';
         html += '</tr>';
       });
       html += '</table>';
